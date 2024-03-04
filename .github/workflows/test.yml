@@ -1,0 +1,48 @@
+name: LLVM18 Memory sanitizer test
+
+on: [push, pull_request]
+
+jobs:
+  test-ubuntu-msan:
+    timeout-minutes: 60
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y git build-essential cmake ninja-build
+
+    - name: Install clang
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 18
+
+    - name: Build libcxx_msan
+      run: |
+        git clone --depth=1 https://github.com/llvm/llvm-project -b release/18.x
+        cd llvm-project
+        mkdir build
+        cmake -G Ninja -S runtimes -B build -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLLVM_USE_SANITIZER=MemoryWithOrigins
+        ninja -C build cxx cxxabi
+        cd build
+        mkdir /tmp/libcxx_msan
+        cp -r include /tmp/libcxx_msan
+        cp -r lib /tmp/libcxx_msan
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Build
+      run: |
+        mkdir build
+        cd build
+        clang++-18 -o test -nostdinc++ -nostdlib++ -fsanitize=memory -fsanitize-recover -fsanitize-memory-track-origins -isystem /tmp/libcxx_msan/include/c++/v1 -L/tmp/libcxx_msan/lib -Wl,-rpath /tmp/libcxx_msan/lib -lc++ -lc++abi -Wno-unused-command-line-argument -fuse-ld=lld-18 -fno-omit-frame-pointer -g ../test.cpp
+
+    - name: Run
+      run: |
+        cd build
+        MSAN_OPTIONS="halt_on_error=1" ./test
