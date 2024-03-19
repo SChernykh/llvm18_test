@@ -45,4 +45,5 @@ jobs:
     - name: Run
       run: |
         cd build
+        sudo sysctl vm.mmap_rnd_bits=28
         MSAN_OPTIONS="halt_on_error=1" ./test
