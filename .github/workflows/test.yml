@@ -7,6 +7,12 @@ jobs:
     timeout-minutes: 60
     runs-on: ubuntu-22.04
 
+    strategy:
+      matrix:
+        config:
+          - {unwinder: "OFF"}
+          - {unwinder: "ON"}
+
     steps:
     - name: Install dependencies
       run: |
@@ -24,7 +30,7 @@ jobs:
         git clone --depth=1 https://github.com/llvm/llvm-project -b release/18.x
         cd llvm-project
         mkdir build
-        cmake -G Ninja -S runtimes -B build -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLLVM_USE_SANITIZER=MemoryWithOrigins -DLIBCXXABI_USE_LLVM_UNWINDER=OFF
+        cmake -G Ninja -S runtimes -B build -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLLVM_USE_SANITIZER=MemoryWithOrigins -DLIBCXXABI_USE_LLVM_UNWINDER=${{ matrix.config.unwinder }}
         ninja -C build cxx cxxabi
         cd build
         mkdir /tmp/libcxx_msan
