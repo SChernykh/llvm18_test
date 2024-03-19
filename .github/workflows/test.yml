@@ -24,7 +24,7 @@ jobs:
         git clone --depth=1 https://github.com/llvm/llvm-project -b release/18.x
         cd llvm-project
         mkdir build
-        cmake -G Ninja -S runtimes -B build -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLLVM_USE_SANITIZER=MemoryWithOrigins
+        cmake -G Ninja -S runtimes -B build -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" -DCMAKE_C_COMPILER=clang-18 -DCMAKE_CXX_COMPILER=clang++-18 -DLLVM_USE_SANITIZER=MemoryWithOrigins -DLIBCXXABI_USE_LLVM_UNWINDER=OFF
         ninja -C build cxx cxxabi
         cd build
         mkdir /tmp/libcxx_msan
